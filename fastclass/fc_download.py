@@ -46,9 +46,9 @@ def crawl(folder: str, search: str, maxnum:int, crawlers: [List[str]] = ['GOOGLE
     os.makedirs(folder, exist_ok=True)
 
     sources = {}
-    if maxnum > 1000:
-        print("Max num limited to 1000")
-        maxnum = 1000
+    #if maxnum > 1000:
+    #    print("Max num limited to 1000")
+    #    maxnum = 1000
 
     for c in crawlers:
         print(f'    -> {c}')
