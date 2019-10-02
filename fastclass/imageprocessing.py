@@ -33,19 +33,17 @@ def resize(files: List[str], \
             if (should_resize):
                 try:
                     im.thumbnail(size, Image.ANTIALIAS)
-                except OSError:
+                    bg = Image.new('RGBA', size, (255, 255, 255, 0))
+                    bg.paste(im, (int((size[0] - im.size[0]) / 2), int((size[1] - im.size[1]) / 2)))
+                except OSError, ValueError:
                     # skip truncated files
                     continue
-
-                bg = Image.new('RGBA', size, (255, 255, 255, 0))
-                bg.paste(im, (int((size[0] - im.size[0]) / 2), int((size[1] - im.size[1]) / 2)))
-
             else:
                 bg = im
             
             try:
                 bg = bg.convert('RGB')
-            except OSError:
+            except OSError, ValueError:
                 t.update(1)
                 continue
 
