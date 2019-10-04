@@ -16,6 +16,7 @@ import logging
 import os
 import shutil
 import tempfile
+import timeit
 from typing import List, Dict
 
 from . deduplicate import remove_dups
@@ -39,11 +40,46 @@ class CustomDownloader(ImageDownloader, ImageLog):
     def process_meta(self, task):
         ImageLog.registry[task['filename']] = task['file_url']
 
+def crawl_google(folder: str, search: str, maxnum: int, num_threads: int):
+    google_crawler = GoogleImageCrawler(downloader_cls=CustomDownloader,
+                                        log_level=logging.CRITICAL,
+                                        feeder_threads=1,
+                                        parser_threads=1,
+                                        downloader_threads=num_threads,
+                                        storage={'root_dir': folder})
+
+    google_crawler.crawl(keyword=search, offset=0, max_num=maxnum,
+                         min_size=(200,200), max_size=None, file_idx_offset='auto')
+
+def crawl_bing(folder: str, search: str, maxnum: int, num_threads: int):
+    bing_crawler = BingImageCrawler(downloader_cls=CustomDownloader,
+                                    log_level=logging.CRITICAL,
+                                    downloader_threads=num_threads,
+                                    storage={'root_dir': folder})
+    bing_crawler.crawl(keyword=search, filters=None, offset=0, max_num=maxnum, file_idx_offset='auto')
+
+def crawl_baidu(folder: str, search: str, maxnum: int, num_threads: int):
+    baidu_crawler = BaiduImageCrawler(downloader_cls=CustomDownloader,
+                                      log_level=logging.CRITICAL,
+                                      downloader_threads=num_threads,
+                                      storage={'root_dir': folder})
+    baidu_crawler.crawl(keyword=search, offset=0, max_num=maxnum,
+                        min_size=(200,200), max_size=None, file_idx_offset='auto')
+
+def crawl_run(c: str, folder: str, search: str, maxnum: int, num_threads: int):
+    if c == 'GOOGLE':
+        crawl_google(folder, search, maxnum, num_threads)
+    elif c == 'BING':
+        crawl_bing(folder, search, maxnum, num_threads)
+    elif c == 'BAIDU':
+        crawl_baidu(folder, search, maxnum, num_threads)
+
 def crawl(folder: str, search: str, maxnum:int, crawlers: [List[str]] = ['GOOGLE', 'BING', 'BAIDU']) -> Dict[str, str]:
     """Crawl web sites for images"""
     print('(1) Crawling ...')
     # prepare folders
     os.makedirs(folder, exist_ok=True)
+    num_threads = 4
 
     sources = {}
     #if maxnum > 1000:
@@ -51,34 +87,11 @@ def crawl(folder: str, search: str, maxnum:int, crawlers: [List[str]] = ['GOOGLE
     #    maxnum = 1000
 
     for c in crawlers:
-        print(f'    -> {c}')
-        if c == 'GOOGLE':
-            google_crawler = GoogleImageCrawler(
-                downloader_cls=CustomDownloader,
-                log_level=logging.CRITICAL,
-                feeder_threads=1,
-                parser_threads=1,
-                downloader_threads=4,
-                storage={'root_dir': folder})
-
-            google_crawler.crawl(keyword=search, offset=0, max_num=maxnum,
-                                min_size=(200,200), max_size=None, file_idx_offset=0)
-
-        if c == 'BING':
-            bing_crawler = BingImageCrawler(downloader_cls=CustomDownloader,
-                                            log_level=logging.CRITICAL,
-                                            downloader_threads=4,
-                                            storage={'root_dir': folder})
-            bing_crawler.crawl(keyword=search, filters=None, offset=0, max_num=maxnum, file_idx_offset='auto')
-
-
-        if c == 'BAIDU':
-            baidu_crawler = BaiduImageCrawler(downloader_cls=CustomDownloader,
-                                    log_level=logging.CRITICAL,
-                                    storage={'root_dir': folder})
-            baidu_crawler.crawl(keyword=search, offset=0, max_num=maxnum,
-                                min_size=(200,200), max_size=None, file_idx_offset='auto')
-
+        print(f'    -> {c}', end='', flush=True)
+        #run_command = f'crawl_run("{c}", "{folder}", "{search}", {maxnum}, {num_threads})'
+        run_command = lambda : crawl_run(c, folder, search, maxnum, num_threads)
+        runtime = timeit.timeit(run_command, 'gc.enable()', number=1) / (10**6)
+        print(f' ({runtime:.2f} sec)')
 
     return {k: v for k, v in CustomDownloader.registry.items() if k is not None}
 
