@@ -84,7 +84,7 @@ def crawl(folder: str, search: str, maxnum: int, num_threads: int, crawlers: [Li
     for c in crawlers:
         print(f'    -> {c}', end='', flush=True)
         run_command = lambda : crawl_run(c, folder, search, maxnum, num_threads)
-        runtime = timeit.timeit(run_command, 'gc.enable()', number=1) / (10**6)
+        runtime = timeit.timeit(run_command, 'gc.enable()', number=1)# / float((10**6))
         print(f' ({runtime:.2f} sec)')
 
     return {k: v for k, v in CustomDownloader.registry.items() if k is not None}
@@ -97,7 +97,8 @@ def main(infile: str, size: int, crawler: List[str], keep: bool, maxnum: int, nu
         crawler = ['GOOGLE', 'BING', 'BAIDU']
 
     if os.path.isdir(outpath) or (keep and os.path.isdir(outpath+'.raw')):
-        print(f'Directory "{outpath + ((" or " + outpath + ".raw") if keep else "")}" exists. Would you like to overwrite the directory? [y/n]')
+        outnames = outpath + (('" or "' + outpath + '.raw') if keep else "")
+        print(f'Directory "{outnames}" exists. Would you like to overwrite the directory? [y/n]')
         choice = input().lower()
         while (not (choice is 'y' or 'n')):
             print("Please reply with 'y' or 'n'")
