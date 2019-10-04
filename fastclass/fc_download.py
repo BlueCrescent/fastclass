@@ -74,12 +74,11 @@ def crawl_run(c: str, folder: str, search: str, maxnum: int, num_threads: int):
     elif c == 'BAIDU':
         crawl_baidu(folder, search, maxnum, num_threads)
 
-def crawl(folder: str, search: str, maxnum:int, crawlers: [List[str]] = ['GOOGLE', 'BING', 'BAIDU']) -> Dict[str, str]:
+def crawl(folder: str, search: str, maxnum: int, num_threads: int, crawlers: [List[str]] = ['GOOGLE', 'BING', 'BAIDU']) -> Dict[str, str]:
     """Crawl web sites for images"""
     print('(1) Crawling ...')
     # prepare folders
     os.makedirs(folder, exist_ok=True)
-    num_threads = 4
     sources = {}
 
     for c in crawlers:
@@ -90,7 +89,7 @@ def crawl(folder: str, search: str, maxnum:int, crawlers: [List[str]] = ['GOOGLE
 
     return {k: v for k, v in CustomDownloader.registry.items() if k is not None}
 
-def main(infile: str, size: int, crawler: List[str], keep: bool, maxnum:int, outpath: str):
+def main(infile: str, size: int, crawler: List[str], keep: bool, maxnum: int, num_threads: int, outpath: str):
     SIZE=(size,size)
     classes = []
 
@@ -129,7 +128,7 @@ def main(infile: str, size: int, crawler: List[str], keep: bool, maxnum:int, out
             out_name = sanitize_searchstring(search_term, rstring=remove_terms)
             raw_folder = os.path.join(tmp, out_name)
 
-            source_urls = crawl(raw_folder, search_term, maxnum, crawlers=crawler)
+            source_urls = crawl(raw_folder, search_term, maxnum, num_threads, crawlers=crawler)
             remove_dups(raw_folder)
 
             # resize
@@ -156,26 +155,29 @@ click.Context.get_usage = click.Context.get_help
 @click.command(context_settings=CONTEXT_SETTINGS, epilog=EPILOG)
 
 @click.option('-c', '--crawler', default=['ALL'],
-                    type=click.Choice(['ALL','GOOGLE', 'BING', 'BAIDU']),
-                    show_default=True, multiple=True,
-                    help='selection of crawler (multiple invocations supported)')
+              type=click.Choice(['ALL','GOOGLE', 'BING', 'BAIDU']),
+              show_default=True, multiple=True,
+              help='selection of crawler (multiple invocations supported)')
 
 @click.option('-k', '--keep',  default=False, is_flag=True, show_default=True,
-                    help='keep original results of crawlers (copy them to .raw folder')
+              help='keep original results of crawlers (copy them to .raw folder')
 
 @click.option('-m', '--maxnum', default=1000, show_default=True, type=int,
-                    help='maximum number of images per crawler (lower is faster, 1000 is max)')
+              help='maximum number of images per crawler (lower is faster, 1000 is max)')
 
 @click.option('-s', '--size',  default=299, show_default=True, type=int,
-                    help='image size for rescaling. Set to 0 to keep original size.')
+              help='image size for rescaling. Set to 0 to keep original size.')
+
+@click.option('-t', '--num_threads',  default=4, show_default=True, type=int,
+              help='number of threads for crawling.')
 
 @click.option('-o', '--outpath',  default='dataset', show_default=True,
-                    help='name of output directory')
+              help='name of output directory')
 
 @click.argument('infile', type=click.File('r'), required=True)
 
-def cli(infile, size, crawler, keep, maxnum, outpath):
-    main(infile, size, crawler, keep, maxnum, outpath)
+def cli(infile, size, crawler, keep, maxnum, num_threads, outpath):
+    main(infile, size, crawler, keep, maxnum, num_threads, outpath)
 
 if __name__ == "__main__":
     cli()
