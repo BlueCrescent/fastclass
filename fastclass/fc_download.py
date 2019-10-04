@@ -102,15 +102,15 @@ def main(infile: str, size: int, crawler: List[str], keep: bool, maxnum:int, out
     if 'ALL' in crawler:
         crawler = ['GOOGLE', 'BING', 'BAIDU']
 
-    if os.path.isdir(outpath):
-        print(f'Directory "{outpath}" exists. Would you like to overwrite the directory? [y/n]')
+    if os.path.isdir(outpath) or (keep and os.path.isdir(outpath+'.raw')):
+        print(f'Directory "{outpath + ((" or " + outpath + ".raw") if keep else "")}" exists. Would you like to overwrite the directory? [y/n]')
         choice = input().lower()
         while (not (choice is 'y' or 'n')):
             print("Please reply with 'y' or 'n'")
             choice = input().lower()
         if (choice == 'y'):
             shutil.rmtree(outpath)
-            if os.path.isdir(outpath+'.raw'):
+            if keep and os.path.isdir(outpath+'.raw'):
                 shutil.rmtree(outpath+'.raw')
         else:
             exit(-1)
