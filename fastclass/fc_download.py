@@ -80,15 +80,10 @@ def crawl(folder: str, search: str, maxnum:int, crawlers: [List[str]] = ['GOOGLE
     # prepare folders
     os.makedirs(folder, exist_ok=True)
     num_threads = 4
-
     sources = {}
-    #if maxnum > 1000:
-    #    print("Max num limited to 1000")
-    #    maxnum = 1000
 
     for c in crawlers:
         print(f'    -> {c}', end='', flush=True)
-        #run_command = f'crawl_run("{c}", "{folder}", "{search}", {maxnum}, {num_threads})'
         run_command = lambda : crawl_run(c, folder, search, maxnum, num_threads)
         runtime = timeit.timeit(run_command, 'gc.enable()', number=1) / (10**6)
         print(f' ({runtime:.2f} sec)')
