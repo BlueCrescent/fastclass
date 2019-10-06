@@ -11,6 +11,7 @@ import os
 from PIL import ImageTk, Image
 import tkinter as tk
 import shutil
+import pathlib
 
 from . imageprocessing import image_pad
 
@@ -214,29 +215,45 @@ class AppTk(tk.Frame):
         self.Label.image=photoimage
         self.print_titlebar()
 
+def get_folder_lists(INFOLDER, OUTFOLDER):
+	suffixes = ['jpg', 'jpeg', 'png', 'tif', 'tiff']
+	suffixes += [x.upper() for x in suffixes]
+	files = list(itertools.chain(*[glob.glob(f'{INFOLDER}/*.{x}') for x in suffixes]))
+
+	if len(files) == 0:
+		SUBFOLDERS = os.listdir(INFOLDER)
+		INFOLDERS = [pathlib.Path(INFOLDER)/SUBFOLDER for SUBFOLDER in SUBFOLDERS]
+		OUTFOLDERS = [pathlib.Path(OUTFOLDER)/SUBFOLDER for SUBFOLDER in SUBFOLDERS]
+	else:
+		INFOLDERS = [INFOLDER]
+		OUTFOLDERS = [OUTFOLDER]
+	return INFOLDERS, OUTFOLDERS
 
 def main(INFOLDER, OUTFOLDER, nocopy):
-    root = tk.Tk()
-    root.title('FastClass')
-    
-    app = AppTk(root, infolder=INFOLDER, outfolder=OUTFOLDER, nocopy=nocopy)
+	INFOLDERS, OUTFOLDERS = get_folder_lists(INFOLDER, OUTFOLDER)
 
-    app.grid(row=0,column=0)
+	for INFOLDER, OUTFOLDER in zip(INFOLDERS, OUTFOLDERS):
+		root = tk.Tk()
+		root.title('FastClass')
+		
+		app = AppTk(root, infolder=INFOLDER, outfolder=OUTFOLDER, nocopy=nocopy)
 
-    # start event loop
-    root.lift()
-    root.attributes('-topmost',True)
-    root.after_idle(root.attributes,'-topmost',False)
+		app.grid(row=0,column=0)
 
-    from os import system
-    from platform import system as platform
+		# start event loop
+		root.lift()
+		root.attributes('-topmost',True)
+		root.after_idle(root.attributes,'-topmost',False)
 
-    if platform() == 'Darwin':  # How Mac OS X is identified by Python
-        script = 'tell application "System Events" \
-        to set frontmost of the first process whose unix id is {pid} to true'.format(pid=os.getpid())
-        os.system("/usr/bin/osascript -e '{script}'".format(script=script))
+		from os import system
+		from platform import system as platform
 
-    root.mainloop()
+		if platform() == 'Darwin':  # How Mac OS X is identified by Python
+			script = 'tell application "System Events" \
+			to set frontmost of the first process whose unix id is {pid} to true'.format(pid=os.getpid())
+			os.system("/usr/bin/osascript -e '{script}'".format(script=script))
+
+		root.mainloop()
 
 # Cli - command line arguments
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
